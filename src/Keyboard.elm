@@ -1,10 +1,10 @@
 effect module Keyboard where { subscription = MySub } exposing
-  ( keycode
-  , keydowns
+  ( keydowns
   , keyups
   )
 
 {-| This library lets you listen to keyboard events.
+
 # Subscriptions
 
 @docs keydowns, keyups
@@ -19,21 +19,24 @@ import Process
 import Task exposing (Task)
 
 
+{-| The decoder used to extract the keyCode value from the keyboard event.
+-}
 keycode : Json.Decoder KeyCode
 keycode =
   ("keyCode" := Json.int)
 
+
 -- Keyboard events
 
 
-{-| Subscribe to keydown.
+{-| Subscribe to keydown events anywhere in the document.
 -}
 keydowns : (KeyCode -> msg) -> Sub msg
 keydowns tagger =
   subscription (MySub "keydown" tagger)
 
 
-{-| Subscribe to keyup.
+{-| Subscribe to keyup events anywhere in the document.
 -}
 keyups : (KeyCode -> msg) -> Sub msg
 keyups tagger =
