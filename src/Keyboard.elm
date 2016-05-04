@@ -21,7 +21,7 @@ import Task exposing (Task)
 
 keycode : Json.Decoder KeyCode
 keycode =
-  Json.int
+  ("keyCode" := Json.int)
 
 -- Keyboard events
 
