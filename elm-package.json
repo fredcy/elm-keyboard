@@ -1,13 +1,13 @@
 {
     "version": "1.0.0",
-    "summary": "Track global mouse clicks and movements, helpful for dragging.",
-    "repository": "http://github.com/elm-lang/mouse.git",
+    "summary": "Track keystrokes",
+    "repository": "http://github.com/elm-lang/keyboard.git",
     "license": "BSD3",
     "source-directories": [
         "src"
     ],
     "exposed-modules": [
-        "Mouse"
+
     ],
     "dependencies": {
         "elm-lang/core": "4.0.0 <= v < 5.0.0",

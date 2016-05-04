@@ -1,24 +1,17 @@
-effect module Mouse where { subscription = MySub } exposing
-  ( Position, position
-  , clicks
-  , moves
-  , downs, ups
+effect module Keyboard where { subscription = MySub } exposing
+  (
+   keydowns
+  , keyups
   )
 
-{-| This library lets you listen to global mouse events. This is useful
-for a couple tricky scenarios including:
-
-  - Detecting a "click" outside the current component.
-  - Supporting drag-and-drop interactions.
-
-# Mouse Position
-@docs Position, position
-
+{-| This library lets you listen to keyboard events.
 # Subscriptions
-@docs clicks, moves, downs, ups
+
+@docs keydowns, keyups
 
 -}
 
+import Char exposing (KeyCode)
 import Dict
 import Dom.LowLevel as Dom
 import Json.Decode as Json exposing ((:=))
@@ -26,59 +19,25 @@ import Process
 import Task exposing (Task)
 
 
+keycode : Json.Decoder KeyCode
+keycode =
+  Json.int
 
--- POSITIONS
+-- Keyboard events
 
 
-{-| The position of the mouse relative to the whole document. So if you are
-scrolled down a bunch, you are still getting a coordinate relative to the
-very top left corner of the *whole* document.
+{-| Subscribe to keydown.
 -}
-type alias Position =
-  { x : Int
-  , y : Int
-  }
+keydowns : (KeyCode -> msg) -> Sub msg
+keydowns tagger =
+  subscription (MySub "keydown" tagger)
 
 
-{-| The decoder used to extract a `Position` from a JavaScript mouse event.
+{-| Subscribe to keyup.
 -}
-position : Json.Decoder Position
-position =
-  Json.object2 Position ("pageX" := Json.int) ("pageY" := Json.int)
-
-
-
--- MOUSE EVENTS
-
-
-{-| Subscribe to mouse clicks anywhere on screen.
--}
-clicks : (Position -> msg) -> Sub msg
-clicks tagger =
-  subscription (MySub "click" tagger)
-
-
-{-| Subscribe to mouse moves anywhere on screen. It is best to unsubscribe if
-you do not need these events. Otherwise you will handle a bunch of events for
-no benefit.
--}
-moves : (Position -> msg) -> Sub msg
-moves tagger =
-  subscription (MySub "mousemove" tagger)
-
-
-{-| Get a position whenever the user *presses* the mouse button.
--}
-downs : (Position -> msg) -> Sub msg
-downs tagger =
-  subscription (MySub "mousedown" tagger)
-
-
-{-| Get a position whenever the user *releases* the mouse button.
--}
-ups : (Position -> msg) -> Sub msg
-ups tagger =
-  subscription (MySub "mouseup" tagger)
+keyups : (KeyCode -> msg) -> Sub msg
+keyups tagger =
+  subscription (MySub "keyup" tagger)
 
 
 
@@ -86,7 +45,7 @@ ups tagger =
 
 
 type MySub msg
-  = MySub String (Position -> msg)
+  = MySub String (KeyCode -> msg)
 
 
 subMap : (a -> b) -> MySub a -> MySub b
@@ -103,7 +62,7 @@ type alias State msg =
 
 
 type alias Watcher msg =
-  { taggers : List (Position -> msg)
+  { taggers : List (KeyCode -> msg)
   , pid : Process.Id
   }
 
@@ -113,7 +72,7 @@ type alias Watcher msg =
 
 
 type alias SubDict msg =
-  Dict.Dict String (List (Position -> msg))
+  Dict.Dict String (List (KeyCode -> msg))
 
 
 categorize : List (MySub msg) -> SubDict msg
@@ -153,7 +112,7 @@ init =
 
 type alias Msg =
   { category : String
-  , position : Position
+  , keycode : KeyCode
   }
 
 
@@ -177,7 +136,7 @@ onEffects router newSubs oldState =
       task
         `Task.andThen` \state ->
 
-      Process.spawn (Dom.onDocument category position (Platform.sendToSelf router << Msg category))
+      Process.spawn (Dom.onDocument category keycode (Platform.sendToSelf router << Msg category))
         `Task.andThen` \pid ->
 
       Task.succeed
@@ -193,7 +152,7 @@ onEffects router newSubs oldState =
 
 
 onSelfMsg : Platform.Router msg Msg -> Msg -> State msg -> Task Never (State msg)
-onSelfMsg router {category,position} state =
+onSelfMsg router {category,keycode} state =
   case Dict.get category state of
     Nothing ->
       Task.succeed state
@@ -201,7 +160,7 @@ onSelfMsg router {category,position} state =
     Just {taggers} ->
       let
         send tagger =
-          Platform.sendToApp router (tagger position)
+          Platform.sendToApp router (tagger keycode)
       in
         Task.sequence (List.map send taggers)
           `Task.andThen` \_ ->
