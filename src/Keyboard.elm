@@ -1,6 +1,6 @@
 effect module Keyboard where { subscription = MySub } exposing
-  (
-   keydowns
+  ( keycode
+  , keydowns
   , keyups
   )
 
